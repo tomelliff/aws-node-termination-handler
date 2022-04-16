@@ -35,7 +35,7 @@ type RebalanceRecommendationMonitor struct {
 	NodeName         string
 }
 
-// NewRebalanceRecommendationMonitor creates an instance of a rebalance recoomendation IMDS monitor
+// NewRebalanceRecommendationMonitor creates an instance of a rebalance recommendation IMDS monitor
 func NewRebalanceRecommendationMonitor(imds *ec2metadata.Service, interruptionChan chan<- monitor.InterruptionEvent, nodeName string) RebalanceRecommendationMonitor {
 	return RebalanceRecommendationMonitor{
 		IMDS:             imds,

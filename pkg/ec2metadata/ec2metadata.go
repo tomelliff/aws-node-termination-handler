@@ -16,6 +16,7 @@ package ec2metadata
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -34,6 +35,8 @@ const (
 	ScheduledEventPath = "/latest/meta-data/events/maintenance/scheduled"
 	// RebalanceRecommendationPath is the context path to events/recommendations/rebalance within IMDS
 	RebalanceRecommendationPath = "/latest/meta-data/events/recommendations/rebalance"
+	// AutoScalingGroupLifecycleTargetStatePath is the context path to autoscaling group lifecycle target state within IMDS
+	AutoScalingGroupLifecycleTargetStatePath = "/latest/meta-data/autoscaling/target-lifecycle-state"
 	// InstanceIDPath path to instance id
 	InstanceIDPath = "/latest/meta-data/instance-id"
 	// InstanceLifeCycle path to instance life cycle
@@ -191,6 +194,20 @@ func (e *Service) GetRebalanceRecommendationEvent() (rebalanceRec *RebalanceReco
 		return nil, fmt.Errorf("Could not decode rebalance recommendation response: %w", err)
 	}
 	return rebalanceRec, nil
+}
+
+func (e *Service) GetAutoScalingGroupLifecycleTargetStatusEvent() (asgLifecycleTargetStatus string, err error) {
+	resp, err := e.Request(AutoScalingGroupLifecycleTargetStatePath)
+	if resp != nil && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
+		return "", fmt.Errorf("Metadata request received http status code: %d", resp.StatusCode)
+	}
+	if err != nil {
+		return "", fmt.Errorf("Unable to parse metadata response: %w", err)
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := io.ReadAll(resp.Body)
+
+	return string(bodyBytes), nil
 }
 
 // GetMetadataInfo generic function for retrieving ec2 metadata

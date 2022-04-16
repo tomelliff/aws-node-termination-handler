@@ -504,6 +504,31 @@ func TestGetRebalanceRecommendationEventRequestFailure(t *testing.T) {
 	h.Assert(t, err != nil, "error expected because no server should be running")
 }
 
+func TestGetAutoScalingGroupLifecycleTargetStatusSuccess(t *testing.T) {
+	requestPath := "/latest/meta-data/autoscaling/target-lifecycle-state"
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Add("X-aws-ec2-metadata-token-ttl-seconds", "100")
+		if req.URL.String() == "/latest/api/token" {
+			rw.WriteHeader(200)
+			_, err := rw.Write([]byte(`token`))
+			h.Ok(t, err)
+			return
+		}
+		h.Equals(t, req.Header.Get("X-aws-ec2-metadata-token"), "token")
+		h.Equals(t, req.URL.String(), requestPath)
+		_, err := rw.Write([]byte("Terminated"))
+		h.Ok(t, err)
+	}))
+	defer server.Close()
+
+	// Use URL from our local test server
+	imds := ec2metadata.New(server.URL, 1)
+	targetLifecycleState, err := imds.GetAutoScalingGroupLifecycleTargetStatusEvent()
+	h.Ok(t, err)
+	h.Equals(t, "Terminated", targetLifecycleState)
+}
+
 func TestGetMetadataServiceRequest404(t *testing.T) {
 	var requestPath string = "/latest/meta-data/instance-type"
 
